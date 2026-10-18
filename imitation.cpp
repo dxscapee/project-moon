@@ -4,7 +4,6 @@ void imitation::euler_step()
 {
     S_curr += V_curr*t_step;
     V_curr += a*t_step;
-    t_curr += t_step;
     ++step_count;
     t_curr = step_count * t_step;
 }
@@ -58,10 +57,4 @@ long double imitation::get_V() const{
 
 long double imitation::get_S_exact() const {
     return S_0 + V_0 * t_curr + a*t_curr*t_curr/2.0L;
-}
-
-void imitation::get_type() const{
-    std::cout << "time:" << (typeid(t_curr).name() == std::string("e") ? "long double" : typeid(time).name()) << " | ";
-    std::cout << "curr_S:" << (typeid(S_curr).name() == std::string("e") ? "long double" : typeid(time).name()) << " | ";
-    std::cout << "curr_V:" << (typeid(V_curr).name() == std::string("e") ? "long double" : typeid(time).name()) << std::endl;
 }

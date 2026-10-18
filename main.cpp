@@ -25,24 +25,22 @@ int main() {
     //for Runge-Kutta method
     imitation IM2(myS_0,myV_0,mya,myt_step,myt_max);
 
+    //фиксация точности переменных (3 знака после запятой)
+    std::cout << std::fixed << std::setprecision(3);
+
     //прогон по времени, главный цикл программы
     while (IM1.get_t() < IM1.get_tmax() && IM2.get_t() < IM2.get_tmax())
     {
-        std::cout << std::fixed << std::setprecision(3);
         std::cout << "t:" << IM1.get_t() << " | ";
         std::cout << "Euler: V:" << IM1.get_V() << " ";
         std::cout << "S:" << IM1.get_S() << " | ";
         std::cout << "RK4: V:" << IM2.get_V() << " ";
         std::cout << "S:" << IM2.get_S() << std::endl;
 
-        if (IM1.get_t() < IM1.get_tmax()) {
-            IM1.euler_step();
-        }
-        if (IM2.get_t() < IM2.get_tmax()) {
-            IM2.RK4();
-        }
-
+        IM1.euler_step();
+        IM2.RK4();
     }
+
     std::cout << "t:" << IM1.get_t() << " | ";
     std::cout << "Euler: V:" << IM1.get_V() << " ";
     std::cout << "S:"<< IM1.get_S() << " | ";

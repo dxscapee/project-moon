@@ -2,7 +2,6 @@
 #define PROJECT_MOON
 
 #include <iostream>
-#include <typeinfo>
 
 class imitation {
 private:
@@ -12,7 +11,7 @@ private:
     long double V_curr;
     long double a;
 
-    size_t step_count = 0.0L;
+    size_t step_count = 0;
     long double t_curr;
     long double t_step;
     long double t_max;
@@ -45,8 +44,6 @@ public:
     long double get_S() const;
     long double get_V() const;
     long double get_S_exact() const;
-    void get_type() const;
-
 
     ~imitation() {}
 };
