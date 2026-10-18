@@ -38,7 +38,7 @@ void imitation::RK4()
     S_curr += (k1 + 2.0L*k2 + 2.0L*k3 + k4) / 6;
     V_curr += (m1 + 2.0L*m2 + 2.0L*m3 + m4) / 6;
     ++step_count;
-    t_curr += step_count * t_step;
+    t_curr = step_count * t_step;
 }
 
 long double imitation::get_t() const{
