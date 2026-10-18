@@ -5,6 +5,8 @@ void imitation::euler_step()
     S_curr += V_curr*t_step;
     V_curr += a*t_step;
     t_curr += t_step;
+    ++step_count;
+    t_curr = step_count * t_step;
 }
 
 void imitation::RK4()
@@ -35,7 +37,8 @@ void imitation::RK4()
 
     S_curr += (k1 + 2.0L*k2 + 2.0L*k3 + k4) / 6;
     V_curr += (m1 + 2.0L*m2 + 2.0L*m3 + m4) / 6;
-    t_curr += t_step;
+    ++step_count;
+    t_curr += step_count * t_step;
 }
 
 long double imitation::get_t() const{

@@ -15,7 +15,7 @@ int main() {
     const long double myS_0 = 0.0L;
     const long double myV_0 = 0.0L;
     const long double mya = 2.0L;
-    const long double myt_step = 0.1L;
+    const long double myt_step = 0.0001L;
     const long double myt_max = 10.0L;
 
 
@@ -62,7 +62,10 @@ int main() {
     std::cout << "Analytics formula: " << "E:" << IM1.get_S_exact() << " RK4:" << IM2.get_S_exact() << std::endl;
     std::cout << "Error Euler method: " << get_error(IM1.get_S(),IM1.get_S_exact()) << '%'  << std::endl;
     std::cout << "Error Runge-Kutta method: " << get_error(IM2.get_S(),IM2.get_S_exact()) << '%' << std::endl;
-    std::cout << "-----------------------------------------" << std::endl;
+    std::cout << "-----------------------------------------" << std::endl << std::endl ;
+    std::cout << "t      " << "t_max  " << "S       " << "S_exact " << "V      " << std::endl;
+    std::cout << IM1.get_t() << " " << IM1.get_tmax() << " "<< IM1.get_S() << " "<< IM1.get_S_exact() << " " << IM1.get_V() << std::endl;
+    std::cout << IM2.get_t() << " " << IM2.get_tmax() << " "<< IM2.get_S() << " "<< IM2.get_S_exact() << " " << IM2.get_V() << std::endl;
 
     return 0;
 }

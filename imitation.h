@@ -12,6 +12,7 @@ private:
     long double V_curr;
     long double a;
 
+    size_t step_count = 0.0L;
     long double t_curr;
     long double t_step;
     long double t_max;
