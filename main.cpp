@@ -5,7 +5,7 @@
 
 //расчёт погрешности
 long double get_error(const long double S,const long double S_exact) {
-    return std::abs((S-S_exact)/S) * 100.0L;
+    return std::abs((S-S_exact)/S_exact) * 100.0L;
 }
 
 int main() {
