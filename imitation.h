@@ -10,7 +10,7 @@ private:
     long double V_curr;
     long double a;
 
-    size_t step_count = 0;
+    std::size_t step_count = 0;
     long double t_curr;
     long double t_step;
     long double t_max;
