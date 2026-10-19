@@ -1,5 +1,10 @@
 # Сборка CMake (бинарники, временные файлы)
+build/
 cmake-build-*/
+out/
+
+# Visual Studio
+.vs/
 
 # Локальные настройки CLion
 .idea/
