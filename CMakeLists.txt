@@ -1,19 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
 project(project_moon CXX)
 
-#стандарт C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#жесткие флаги компилятора и оптимизация
-add_compile_options(
-        -O3
-        -Wall
-        -Werror
-        -Wextra
-)
+if(MSVC)
+    # флаги для компилятора Visual Studio
+    add_compile_options(/W4 /WX /O2)
+else()
+    # флаги для GCC и Clang (macOS, Linux)
+    add_compile_options(-O3 -Wall -Werror -Wextra)
+endif()
 
-#исполняемый файл "app" из исходника "main.cpp"
 add_executable(app main.cpp
         imitation.cpp
         imitation.h)
