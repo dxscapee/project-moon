@@ -17,12 +17,6 @@ private:
 
 
 public:
-    //zero-init
-    imitation() :
-    S_0(0.0L), S_curr(0.0L),
-    V_0(0.0L), V_curr(0.0L),
-    a(0.0L),
-    t_curr(0.0L), t_step(0.0L), t_max(0.0L){}
 
     //params init
     imitation(const long double _S_0,const long double _V_0,const long double _a,const long double _t_step,const long double _t_max) :
