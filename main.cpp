@@ -1,10 +1,14 @@
-#include <iostream>
 #include "imitation.h"
 #include <cmath>
 #include <iomanip>
+#include <iostream>
 
 //расчёт погрешности
 long double get_error(const long double S,const long double S_exact) {
+    if (!S_exact) {
+        std::cout << "Calculation error. ";
+        return 100.0L;
+    }
     return std::abs((S-S_exact)/S_exact) * 100.0L;
 }
 

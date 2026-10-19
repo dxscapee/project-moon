@@ -1,7 +1,6 @@
 #ifndef PROJECT_MOON
 #define PROJECT_MOON
-
-#include <iostream>
+#include <cstddef>
 
 class imitation {
 private:

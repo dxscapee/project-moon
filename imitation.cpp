@@ -2,42 +2,57 @@
 
 void imitation::euler_step()
 {
-    S_curr += V_curr*t_step;
-    V_curr += a*t_step;
-    ++step_count;
-    t_curr = step_count * t_step;
+    //избегаем лишних шагов
+    if (t_curr >= t_max) return;
+
+    if (t_max - t_curr >= t_step)
+    {
+        S_curr += V_curr*t_step;
+        V_curr += a*t_step;
+        ++step_count;
+        t_curr = step_count * t_step;
+    }
+    else
+    {
+        S_curr += V_curr*(t_max - t_curr);
+        V_curr += a*(t_max - t_curr);
+        ++step_count;
+        t_curr = t_max;
+    }
 }
 
 void imitation::RK4()
 {
-    //Для первой итерации прмоежуточные S не нужны. но на второй
-    //понадобятся поэтому не удаляем, а комменнтируем
+    //избегаем лишних шагов
+    if (t_curr >= t_max) return;
 
-    const long double k1 = V_curr * t_step;
-    const long double m1 = a * t_step;
+    const long double remaining = t_max - t_curr;
+    const long double dt = (remaining >= t_step) ? t_step : remaining;
 
-    const long double V_mid1 = V_curr + m1/2;
-    //const long double S_mid1 = S_curr + k1/2;
+    const long double k1 = V_curr * dt;
+    const long double m1 = a * dt;
 
-    const long double k2 = V_mid1 * t_step;
-    const long double m2 = a * t_step;
+    const long double V_mid1 = V_curr + m1 / 2;
+    const long double k2 = V_mid1 * dt;
+    const long double m2 = a * dt;
 
-    const long double V_mid2 = V_curr + m2/2;
-    //const long double S_mid2 = S_curr + k2/2;
-
-    const long double k3 = V_mid2 * t_step;
-    const long double m3 = a * t_step;
+    const long double V_mid2 = V_curr + m2 / 2;
+    const long double k3 = V_mid2 * dt;
+    const long double m3 = a * dt;
 
     const long double V_end = V_curr + m3;
-    //const long double S_end = S_curr + k3;
+    const long double k4 = V_end * dt;
+    const long double m4 = a * dt;
 
-    const long double k4 = V_end*t_step;
-    const long double m4 = a * t_step;
+    S_curr += (k1 + 2.0L * k2 + 2.0L * k3 + k4) / 6;
+    V_curr += (m1 + 2.0L * m2 + 2.0L * m3 + m4) / 6;
 
-    S_curr += (k1 + 2.0L*k2 + 2.0L*k3 + k4) / 6;
-    V_curr += (m1 + 2.0L*m2 + 2.0L*m3 + m4) / 6;
     ++step_count;
-    t_curr = step_count * t_step;
+
+    if (remaining <= t_step)
+        t_curr = t_max;
+    else
+        t_curr += dt;
 }
 
 long double imitation::get_t() const{
