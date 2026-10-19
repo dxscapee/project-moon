@@ -39,6 +39,7 @@ V(t) = V_0 + a * t
 ```
 error = |S_num - S_exact| / S_exact * 100%
 ```
+Если `S_exact = 0`, относительная погрешность по данной формуле не определена. В текущей реализации для этого случая используется условное значение 100%.
 
 **Как реализовано:**
 
@@ -74,12 +75,10 @@ t_max = 10
 
 Требуется: CMake версии 3.20 или выше и компилятор с поддержкой C++20:
 
-- **Windows** — Visual Studio 2022 (Community) или MSVC Build Tools
-- **Linux / macOS** — GCC или Clang
+- Windows — Visual Studio 2022 (Community) или MSVC Build Tools
+- Linux / macOS — GCC или Clang
 
-В CMakeLists флаги компилятора задаются отдельно для MSVC (`/W4 /WX /O2`)
-и для GCC/Clang (`-Wall -Werror -Wextra -O3`), так что проект собирается
-на любой из этих платформ.
+В `CMakeLists.txt` включены строгие предупреждения компилятора: для MSVC используются `/W4 /WX /permissive- /sdl`, для GCC и Clang — `-Wall -Wextra -Werror -Wpedantic`. Для конфигурации Debug отключена оптимизация и включена отладочная информация, для Release включена оптимизация.
 
 ### Linux / macOS
 
@@ -93,12 +92,11 @@ cmake --build build
 
 ### Windows (Visual Studio)
 
-Открыть в Visual Studio 2022 папку с проектом
-(*Файл → Открыть → Папка*), VS сам увидит `CMakeLists.txt` и предложит
-собрать проект через *Сборка → Собрать все*. Запуск — *Отладка → Запустить*
-или из командной строки Developer Command Prompt:
+Откройте папку проекта в Visual Studio 2022 (Файл → Открыть → Папка). Visual Studio обнаружит `CMakeLists.txt` и позволит собрать проект через меню «Сборка → Собрать все».
 
-```bash
+Также можно выполнить команды в Developer Command Prompt:
+
+```bat
 git clone https://github.com/dxscapee/project-moon.git
 cd project-moon
 cmake -B build
@@ -106,9 +104,7 @@ cmake --build build --config Release
 .\build\Release\app.exe
 ```
 
-Замечание: под MSVC тип `long double` имеет ту же точность, что и `double`
-(64 бита), в отличие от GCC/Clang (80 бит). Поэтому результаты прогонов
-на Windows могут немного отличаться от результатов на Linux/macOS.
+Замечание: в MSVC тип `long double` имеет ту же точность, что и `double`, в отличие от некоторых реализаций GCC/Clang. Поэтому результаты вычислений могут немного отличаться в зависимости от компилятора и платформы.
 
 ## Структура проекта
 
