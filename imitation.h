@@ -1,6 +1,5 @@
 #ifndef PROJECT_MOON
 #define PROJECT_MOON
-#include <cstddef>
 
 class imitation {
 private:
@@ -10,7 +9,6 @@ private:
     long double V_curr;
     long double a;
 
-    std::size_t step_count = 0;
     long double t_curr;
     long double t_step;
     long double t_max;

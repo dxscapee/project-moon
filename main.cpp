@@ -33,7 +33,7 @@ int main() {
     std::cout << std::fixed << std::setprecision(3);
 
     //прогон по времени, главный цикл программы
-    while (IM1.get_t() < IM1.get_tmax() && IM2.get_t() < IM2.get_tmax())
+    while ((IM1.get_t() < IM1.get_tmax()) || (IM2.get_t() < IM2.get_tmax()))
     {
         std::cout << "t:" << IM1.get_t() << " | ";
         std::cout << "Euler: V:" << IM1.get_V() << " ";
