@@ -297,7 +297,7 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
         return SimulationResult::Over;
     }
 
-    const long double velocity_tolerance = 1e-3L;
+    const long double v_tolerance = 1e-3L;
     const long double epsilon = 1e-12L; //очень малое число
 
     for (std::size_t i = 0; i < max_steps; ++i) {
@@ -386,7 +386,7 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
             V_curr = V_start + a * tau_contact;
             finished = true;
 
-            if (std::abs(V_curr) <= velocity_tolerance) {
+            if (std::abs(V_curr) <= v_tolerance) {
                 V_curr = 0.0L;
                 return SimulationResult::Good;
             }

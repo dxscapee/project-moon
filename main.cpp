@@ -127,7 +127,7 @@ int main() {
     std::cout << "Height: " << IM1.get_H() << " m (error:";
     std::cout << std::scientific << abs_error_RK4 << " m)\n";
     std::cout << std::fixed << std::setprecision(3);
-    std::cout << "Final velocity: " << IM1.get_V() << " m/s\n";
+    std::cout << "Final Speed: " << IM1.get_V() << " m/s\n";
 
     std::cout << "========== EULER RESULTS ==========" << std::endl;
     const long double H_exact_Euler = IM2.get_H_exact(IM2.get_t());
@@ -136,7 +136,7 @@ int main() {
     std::cout << "Height: " << IM2.get_H() << " m (error: ";
     std::cout << std::scientific << abs_error_Euler << " m)\n";
     std::cout << std::fixed << std::setprecision(3);
-    std::cout << "Final velocity: " << IM2.get_V() << " m/s\n";
+    std::cout << "Final Speed: " << IM2.get_V() << " m/s\n";
     //===================================================================
     // Под error в выводе подразумевается абсолютная разница между численным и аналитическим решением.
     // std::fixed и std::setprecision(3) используем для вывода чисел с тремя знаками после запятой.
