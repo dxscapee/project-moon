@@ -1,9 +1,14 @@
 #ifndef PROJECT_MOON_IMITATION_H
 #define PROJECT_MOON_IMITATION_H
 
-#include <cstddef>
+#include <cstddef> //для size_t
 
-
+/*
+    Создаем перечисление, чтобы контролировать
+    результат состояний симуляции.
+    Можно было использовать что то в духе 0,1,2,3 и сравнивать с ними,
+    но использование перечисления более корректно и удобно
+*/
 enum class SimulationResult {
     Good,       //сел
     Crashed,    //разбился
@@ -31,7 +36,6 @@ private:
 
 
 public:
-
     //params init
     imitation(const long double myH_0,const long double myV_0,
         const long double my_m, const long double myP_max, const long double my_g,

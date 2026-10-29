@@ -52,8 +52,7 @@ void imitation::euler_step()
     // Обрабатываем событие, которое произошло первым.
 
     // Обрабатываем посадку, если она произошла первой.
-    if (tau_contact >= 0.0L &&
-        (tau_stop < 0.0L || tau_contact <= tau_stop)) {
+    if (tau_contact >= 0.0L && (tau_stop < 0.0L || tau_contact <= tau_stop)) {
         t_curr += tau_contact;
         H_curr = 0.0L;
         V_curr = V_start + a * tau_contact;
@@ -62,9 +61,7 @@ void imitation::euler_step()
         }
     // Обрабатываем остановку, если она произошла первой.
     if (tau_stop >= 0.0L && tau_stop <= step_dt) {
-        const long double H_stop =
-            H_start + V_start * tau_stop;
-
+        const long double H_stop = H_start + V_start * tau_stop;
         t_curr += tau_stop;
         H_curr = (H_stop > 0.0L) ? H_stop : 0.0L;
         V_curr = 0.0L;
@@ -140,6 +137,7 @@ void imitation::RK4()
     long double tau_contact = -1.0L;
 
     if (H_start > 0.0L) {
+        // Если а == ~0
         if (std::abs(a) < epsilon) {
             if (V_start < 0.0L) {
                 const long double tau = -H_start / V_start;
@@ -148,19 +146,16 @@ void imitation::RK4()
                     tau_contact = tau;
                 }
             }
+        // Если а > ~0
         } else {
-            const long double D =
-                V_start * V_start - 2.0L * a * H_start;
+            const long double D = V_start * V_start - 2.0L * a * H_start;
 
             if (D >= 0.0L) {
                 const long double sqrt_D = std::sqrt(D);
+                const long double tau1 = (-V_start - sqrt_D) / a;
+                const long double tau2 = (-V_start + sqrt_D) / a;
 
-                const long double tau1 =
-                    (-V_start - sqrt_D) / a;
-
-                const long double tau2 =
-                    (-V_start + sqrt_D) / a;
-
+                // Важно выбрать наименьший положительный корень кв. уравнения
                 if (tau1 >= 0.0L && tau1 <= step_dt) {
                     tau_contact = tau1;
                 }
@@ -260,9 +255,7 @@ long double imitation::get_H_exact(const long double t) const{
         return H_0 + V_0 * t - g * t * t / 2.0L;
     }
 
-    const long double H_on =
-        H_0 + V_0 * t_on - g * t_on * t_on / 2.0L;
-
+    const long double H_on = H_0 + V_0 * t_on - g * t_on * t_on / 2.0L;
     const long double V_on = V_0 - g * t_on;
     const long double tau = t - t_on;
     const long double a = P_max / m - g;
@@ -318,8 +311,7 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
         }
 
         // Ускорение на текущем участке движения.
-        const long double a =
-            (t_curr >= t_on) ? (P_max / m - g) : -g;
+        const long double a = (t_curr >= t_on) ? (P_max / m - g) : -g;
 
         // Выполняем один шаг методом Рунге-Кутты 4-го порядка.
         RK4(step_dt);
@@ -359,12 +351,8 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
 
                 if (D >= 0.0L) {
                     const long double sqrt_D = std::sqrt(D);
-
-                    const long double tau1 =
-                        (-V_start - sqrt_D) / a;
-
-                    const long double tau2 =
-                        (-V_start + sqrt_D) / a;
+                    const long double tau1 = (-V_start - sqrt_D) / a;
+                    const long double tau2 = (-V_start + sqrt_D) / a;
 
                     if (tau1 >= 0.0L && tau1 <= step_dt) {
                         tau_contact = tau1;
@@ -397,10 +385,7 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
         // Обрабатываем остановку, если она произошла первой.
         if (tau_stop >= 0.0L && tau_stop <= step_dt) {
             t_curr = t_start + tau_stop;
-
-            H_curr = H_start + V_start * tau_stop
-                   + 0.5L * a * tau_stop * tau_stop;
-
+            H_curr = H_start + V_start * tau_stop + 0.5L * a * tau_stop * tau_stop;
             V_curr = 0.0L;
             finished = true;
 
