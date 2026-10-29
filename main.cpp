@@ -1,74 +1,147 @@
 #include "imitation.h"
-#include <cmath>
 #include <iomanip>
+#include <cmath>
 #include <iostream>
 
-//расчёт погрешности
-long double get_error(const long double S,const long double S_exact) {
-    if (!S_exact) {
-        std::cout << "Calculation error. ";
-        return 100.0L;
-    }
-    return std::abs((S-S_exact)/S_exact) * 100.0L;
-}
+
 
 int main() {
 
-    //В рамках первой итерация можно выставить
-    //const-модификатор для переменных начального условия
-    const long double myS_0 = 0.0L;
-    const long double myV_0 = 0.0L;
-    const long double mya = 2.0L;
-    const long double myt_step = 0.01L;
-    const long double myt_max = 10.0L;
+    //ИНИЦИАЛИЗАЦИЯ
+    //===================================================================
+    const long double myH_0 = 200.0L;  // начальная высота
+    const long double myV_0 = 0.0L;     // начальная скорость
+
+    const long double my_m = 100.0L;    // масса аппарата
+    const long double myP_max = 300.0L; // максимальная тяга
+    const long double my_g = 1.62L;     // ускорение свободного падения
+
+    const long double my_dt = 0.01L;    // шаг по времени
+
+    //объект для подбора нужного времени включения (t_вкл)
+    imitation test(myH_0, myV_0, my_m, myP_max, my_g, my_dt);
+
+    //объект для моделирования при помощи RK4
+    imitation IM1(myH_0, myV_0, my_m, myP_max, my_g, my_dt);
+
+    //объект для моделирования при помощи Euler
+    imitation IM2(myH_0, myV_0, my_m, myP_max, my_g, my_dt);
+    //===================================================================
 
 
-    //for Euler method
-    imitation IM1(myS_0,myV_0,mya,myt_step,myt_max);
 
-    //for Runge-Kutta method
-    imitation IM2(myS_0,myV_0,mya,myt_step,myt_max);
+    //БЛОК ПОДБОРА ВРЕМЕНИ ВКЛЮЧЕНИЯ
+    //===================================================================
+    const long double t_on = test.find_t_on();
 
-    //фиксация точности переменных (3 знака после запятой)
-    std::cout << std::fixed << std::setprecision(3);
-
-    //прогон по времени, главный цикл программы
-    while ((IM1.get_t() < IM1.get_tmax()) || (IM2.get_t() < IM2.get_tmax()))
-    {
-        std::cout << "t:" << IM1.get_t() << " | ";
-        std::cout << "Euler: V:" << IM1.get_V() << " ";
-        std::cout << "S:" << IM1.get_S() << " | ";
-        std::cout << "RK4: V:" << IM2.get_V() << " ";
-        std::cout << "S:" << IM2.get_S() << std::endl;
-
-        IM1.euler_step();
-        IM2.RK4();
+    // Если невозможно приземлиться, то завершаем программу и не моделируем
+    if (t_on < 0.0L) {
+        std::cout << "t_on not found\n";
+        return 0;
+    }
+    std::cout << "Optimal t_on: " << t_on << " s\n";
+    const SimulationResult result = test.simulate_rk4(10000);
+    std::cout << "Simulation result: ";
+    switch (result) {
+        case SimulationResult::Good:
+            std::cout << "Good\n"; break;
+        case SimulationResult::Crashed:
+            std::cout << "Crashed\n"; break;
+        case SimulationResult::Stopped:
+            std::cout << "Stopped\n"; break;
+        case SimulationResult::Over:
+            std::cout << "Over\n"; break;
     }
 
-    std::cout << "t:" << IM1.get_t() << " | ";
-    std::cout << "Euler: V:" << IM1.get_V() << " ";
-    std::cout << "S:"<< IM1.get_S() << " | ";
-    std::cout << "RK4: V:" << IM2.get_V() << " ";
-    std::cout << "S:" << IM2.get_S() << std::endl << std::endl;
+    std::cout << "Final height: " << test.get_H() << " m\n";
+    std::cout << "Final velocity: " << test.get_V() << " m/s\n";
 
-    //вывод информации
-    std::cout << "---/input data/---" << std::endl;
-    std::cout << "S_0: " << myS_0 << std::endl;
-    std::cout << "V_0: " << myV_0 << std::endl;
-    std::cout << "a: " << mya << std::endl;
-    std::cout << "t_delta: " << myt_step << std::endl;
-    std::cout << "t_max: " << myt_max << std::endl;
-    std::cout << "------------------" << std::endl << std::endl;
+    // Остановка, чтобы зафиксировать результат подбора t_on
+    int stoper;
+    std::cin >> stoper;
 
-    std::cout << "--------------/output data/--------------" << std::endl;
-    std::cout << "t      " << "t_max  " << "S       " << "S_exact " << "V      " << std::endl;
-    std::cout << IM1.get_t() << " " << IM1.get_tmax() << " "<< IM1.get_S() << " "<< IM1.get_S_exact() << " " << IM1.get_V() << std::endl;
-    std::cout << IM2.get_t() << " " << IM2.get_tmax() << " "<< IM2.get_S() << " "<< IM2.get_S_exact() << " " << IM2.get_V() << std::endl;
-    std::cout << "Analytics formula: " << "E:" << IM1.get_S_exact() << " RK4:" << IM2.get_S_exact() << std::endl;
-    std::cout << "Error Euler method: " << get_error(IM1.get_S(),IM1.get_S_exact()) << '%'  << std::endl;
-    std::cout << "Error Runge-Kutta method: " << get_error(IM2.get_S(),IM2.get_S_exact()) << '%' << std::endl;
-    std::cout << "-----------------------------------------" << std::endl;
+    //===================================================================
 
+
+
+    // МОДЕЛИРОВАНИЕ
+    //===================================================================
+    IM1.set_t_on(t_on);
+    IM2.set_t_on(t_on);
+
+    bool rk4_active = true;
+    bool euler_active = true;
+
+    std::size_t step = 0;
+    const std::size_t max_steps = 100'000;
+
+    while ((rk4_active || euler_active) && step < max_steps) {
+        std::cout << "t: " << IM1.get_t() << ';' << IM2.get_t();
+        std::cout << " | H: " << IM1.get_H() << ';' << IM2.get_H();
+        std::cout << " | V: " << IM1.get_V() << ';' << IM2.get_V();
+        std::cout << " | a: " << IM1.get_a() << ';' << IM2.get_a() << std::endl;
+
+        // Шаг для моделирования методом РК4
+        if (rk4_active) {
+            IM1.RK4();
+
+            if (IM1.get_H() <= 0.0L) {
+                rk4_active = false;
+            }
+        }
+
+        // Шаг для моделирования методом Эйлера
+        if (euler_active) {
+            IM2.euler_step();
+
+            if (IM2.get_H() <= 0.0L) {
+                euler_active = false;
+            }
+        }
+
+        ++step;
+    }
+
+    if (rk4_active || euler_active) {
+        std::cout << "Simulation stopped: maximum steps" << std::endl;
+    }
+    //===================================================================
+
+
+
+    // РЕЗУЛЬТАТЫ
+    //===================================================================
+    std::cout << "========== INPUT DATA ==========" << std::endl;
+    std::cout << "H_0: " << myH_0 << " m\n";
+    std::cout << "V_0: " << myV_0 << " m/s\n";
+    std::cout << "m: " << my_m << " kg\n";
+    std::cout << "P_max: " << myP_max << " N\n";
+    std::cout << "g: " << my_g << " m/s^2\n";
+    std::cout << "dt: " << my_dt << " s\n";
+    std::cout << "t_on: " << t_on << " s\n";
+
+    std::cout << "========== RK4 RESULTS ==========" << std::endl;
+    const long double H_exact_RK4 = IM1.get_H_exact(IM1.get_t());
+    const long double abs_error_RK4 = std::abs(IM1.get_H() - H_exact_RK4);
+    std::cout << "Time: " << IM1.get_t() << " s\n";
+    std::cout << "Height: " << IM1.get_H() << " m (error:";
+    std::cout << std::scientific << abs_error_RK4 << " m)\n";
+    std::cout << std::fixed << std::setprecision(3);
+    std::cout << "Final velocity: " << IM1.get_V() << " m/s\n";
+
+    std::cout << "========== EULER RESULTS ==========" << std::endl;
+    const long double H_exact_Euler = IM2.get_H_exact(IM2.get_t());
+    const long double abs_error_Euler = std::abs(IM2.get_H() - H_exact_Euler);
+    std::cout << "Time: " << IM2.get_t() << " s\n";
+    std::cout << "Height: " << IM2.get_H() << " m (error: ";
+    std::cout << std::scientific << abs_error_Euler << " m)\n";
+    std::cout << std::fixed << std::setprecision(3);
+    std::cout << "Final velocity: " << IM2.get_V() << " m/s\n";
+    //===================================================================
+    // Под error в выводе подразумевается абсолютная разница между численным и аналитическим решением.
+    // std::fixed и std::setprecision(3) используем для вывода чисел с тремя знаками после запятой.
+    // std::scientific используем для вывода очень малых значений.
+    // После std::scientific возвращаем std::fixed << std::setprecision(3)
 
     return 0;
 }
