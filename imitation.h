@@ -45,6 +45,8 @@ public:
     void euler_step();
     void RK4();
 
+    void RK4(const long double step_dt);
+
     //getters
     long double get_t() const;
     long double get_H() const;

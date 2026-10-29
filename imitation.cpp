@@ -140,6 +140,42 @@ void imitation::RK4()
     t_curr += step_dt;
 }
 
+void imitation::RK4(const long double step_dt)
+{
+    if (finished || step_dt <= 0.0L) {
+        return;
+    }
+
+    const long double a =
+        (t_curr >= t_on) ? (P_max / m - g) : -g;
+
+    const long double H_start = H_curr;
+    const long double V_start = V_curr;
+
+    const long double k1 = V_start * step_dt;
+    const long double m1 = a * step_dt;
+
+    const long double k2 =
+        (V_start + m1 / 2.0L) * step_dt;
+    const long double m2 = a * step_dt;
+
+    const long double k3 =
+        (V_start + m2 / 2.0L) * step_dt;
+    const long double m3 = a * step_dt;
+
+    const long double k4 =
+        (V_start + m3) * step_dt;
+    const long double m4 = a * step_dt;
+
+    H_curr = H_start +
+        (k1 + 2.0L * k2 + 2.0L * k3 + k4) / 6.0L;
+
+    V_curr = V_start +
+        (m1 + 2.0L * m2 + 2.0L * m3 + m4) / 6.0L;
+
+    t_curr += step_dt;
+}
+
 
 
 //==========================геттеры и сеттеры==========================
@@ -194,8 +230,7 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
     V_curr = V_0;
     t_curr = 0.0L;
 
-
-    //проверка корректности начальных условий
+    // Проверка корректности начальных условий.
     if (!std::isfinite(H_0) || !std::isfinite(V_0) ||
         !std::isfinite(m) || !std::isfinite(P_max) ||
         !std::isfinite(g) || !std::isfinite(dt) ||
@@ -207,9 +242,8 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
         return SimulationResult::Over;
     }
 
-
-    const long double velocity_tolerance = 1e-3L;   //допустимая скорость
-    const long double epsilon = 1e-12L;             //очень малое число
+    const long double velocity_tolerance = 1e-3L;
+    const long double epsilon = 1e-12L;
 
     for (std::size_t i = 0; i < max_steps; ++i) {
         const long double H_start = H_curr;
@@ -223,45 +257,64 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
             step_dt = t_on - t_curr;
         }
 
-        // Ускорение до и после включения двигателя.
-        const long double a = (t_curr >= t_on) ? (P_max / m - g) : -g;
+        if (step_dt <= 0.0L) {
+            finished = true;
+            return SimulationResult::Over;
+        }
 
-        const long double V_next = V_start + a * step_dt;
-        const long double H_next = H_start + V_start * step_dt + 0.5L * a * step_dt * step_dt;
+        // Ускорение на текущем участке движения.
+        const long double a =
+            (t_curr >= t_on) ? (P_max / m - g) : -g;
 
-        // Определяем момент остановки при движении вниз.
+        // Выполняем один шаг методом Рунге — Кутты 4-го порядка.
+        RK4(step_dt);
+
+        const long double H_next = H_curr;
+        const long double V_next = V_curr;
+
+        // Проверяем корректность результата интегрирования.
+        if (!std::isfinite(H_next) || !std::isfinite(V_next) ||
+            !std::isfinite(t_curr)) {
+            finished = true;
+            return SimulationResult::Over;
+        }
+
+        // Определяем время остановки при движении вниз.
         long double tau_stop = -1.0L;
 
         if (V_start < 0.0L && V_next >= 0.0L && a > 0.0L) {
             tau_stop = -V_start / a;
         }
 
-        // Определяем момент пересечения поверхности.
+        // Ищем момент пересечения поверхности внутри шага.
         long double tau_contact = -1.0L;
 
-        if (H_start > 0.0L && H_next <= 0.0L) {
-            // Если ускорение нулевое
+        if (H_start > 0.0L) {
             if (std::abs(a) < epsilon) {
                 if (V_start < 0.0L) {
-                    tau_contact = -H_start / V_start;
+                    const long double tau = -H_start / V_start;
+
+                    if (tau >= 0.0L && tau <= step_dt) {
+                        tau_contact = tau;
+                    }
                 }
-            }
-            // Если ускорение ненулевое
-            else {
+            } else {
                 const long double D =
                     V_start * V_start - 2.0L * a * H_start;
 
                 if (D >= 0.0L) {
                     const long double sqrt_D = std::sqrt(D);
+
                     const long double tau1 =
                         (-V_start - sqrt_D) / a;
+
                     const long double tau2 =
                         (-V_start + sqrt_D) / a;
 
-                    // Важно выбрать наименьший положительный корень
                     if (tau1 >= 0.0L && tau1 <= step_dt) {
                         tau_contact = tau1;
                     }
+
                     if (tau2 >= 0.0L && tau2 <= step_dt &&
                         (tau_contact < 0.0L || tau2 < tau_contact)) {
                         tau_contact = tau2;
@@ -270,58 +323,45 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
             }
         }
 
-        // Обрабатываем первое событие, если оно произошло в шаге.
-
-        // Контакт
-        if (tau_contact >= 0.0L && (tau_stop < 0.0L || tau_contact <= tau_stop)) {
-            // Обработка времени контакта, высоты и скорости
+        // Обрабатываем контакт, если он произошёл раньше остановки.
+        if (tau_contact >= 0.0L &&
+            (tau_stop < 0.0L || tau_contact <= tau_stop)) {
             t_curr = t_start + tau_contact;
             H_curr = 0.0L;
             V_curr = V_start + a * tau_contact;
             finished = true;
 
-            // Если скорость в момент контакта допустима
             if (std::abs(V_curr) <= velocity_tolerance) {
                 V_curr = 0.0L;
                 return SimulationResult::Good;
             }
 
-            // Скорость во время контакта не допустима
             return SimulationResult::Crashed;
         }
 
-        // Остановка
+        // Обрабатываем остановку, если она произошла первой.
         if (tau_stop >= 0.0L && tau_stop <= step_dt) {
             t_curr = t_start + tau_stop;
-            H_curr = H_start + V_start * tau_stop + 0.5L * a * tau_stop * tau_stop;
+
+            H_curr = H_start + V_start * tau_stop
+                   + 0.5L * a * tau_stop * tau_stop;
+
             V_curr = 0.0L;
             finished = true;
 
-            // Если остановились слишком высоко (преждевременно)
             if (H_curr > 0.0L) {
                 return SimulationResult::Stopped;
             }
 
-            // Если остановились на допустимой высоте
             H_curr = 0.0L;
             return SimulationResult::Good;
         }
 
-        // Событий в текущем шаге нет — завершаем обычный шаг.
-        H_curr = H_next;
-        V_curr = V_next;
-        t_curr = t_start + step_dt;
-
-
-        // Проверка: не возникли ли некорректные значения
-        if (!std::isfinite(H_curr) || !std::isfinite(V_curr) ||
-            !std::isfinite(t_curr)) {
-            finished = true;
-            return SimulationResult::Over;
-        }
+        // Если событий не было, шаг РК4 уже завершён.
+        // H_curr, V_curr и t_curr содержат новое состояние.
     }
 
-    // Превышение допустимого количества итераций
+    // Превышено максимальное количество шагов.
     finished = true;
     return SimulationResult::Over;
 }
