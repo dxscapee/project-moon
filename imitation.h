@@ -47,7 +47,8 @@ public:
 
     void RK4(const long double step_dt);
 
-    //getters
+
+    //============ getters & setters ============
     long double get_t() const;
     long double get_H() const;
     long double get_V() const;
@@ -55,8 +56,9 @@ public:
     long double get_t_on() const;
     long double get_a() const;
 
-    //setters
     void set_t_on(long double my_t_on);
+    //===========================================
+
 
     //симуляция для нахождения t_on
     SimulationResult simulate_rk4(const std::size_t max_steps);
@@ -64,7 +66,6 @@ public:
     //поиск нужного t_вкл (t_on)
     long double find_t_on();
 
-    ~imitation() {}
 };
 
 

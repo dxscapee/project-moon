@@ -3,16 +3,6 @@
 #include <cmath>
 #include <iostream>
 
-//расчёт погрешности
-long double get_error(const long double H, const long double H_exact)
-{
-    if (std::abs(H_exact) < 1e-12L) {
-        return -1.0L;
-    }
-
-    return std::abs((H - H_exact) / H_exact) * 100.0L;
-}
-
 
 
 int main() {
@@ -39,19 +29,17 @@ int main() {
     //===================================================================
 
 
-    std::cout << std::fixed << std::setprecision(3);
+
     //БЛОК ПОДБОРА ВРЕМЕНИ ВКЛЮЧЕНИЯ
     //===================================================================
     const long double t_on = test.find_t_on();
 
-    //если невозможно приземлиться, то завершаем программу и не моделируем
+    // Если невозможно приземлиться, то завершаем программу и не моделируем
     if (t_on < 0.0L) {
         std::cout << "t_on not found\n";
         return 0;
     }
-
     std::cout << "Optimal t_on: " << t_on << " s\n";
-
     const SimulationResult result = test.simulate_rk4(10000);
     std::cout << "Simulation result: ";
     switch (result) {
@@ -68,7 +56,7 @@ int main() {
     std::cout << "Final height: " << test.get_H() << " m\n";
     std::cout << "Final velocity: " << test.get_V() << " m/s\n";
 
-    //остановка, чтобы зафиксировать t_on
+    // Остановка, чтобы зафиксировать результат подбора t_on
     int stoper;
     std::cin >> stoper;
 
@@ -88,12 +76,12 @@ int main() {
     const std::size_t max_steps = 100'000;
 
     while ((rk4_active || euler_active) && step < max_steps) {
-        std::cout << "t: " << IM1.get_t() << ';' << IM2.get_t()
-                  << " | H: " << IM1.get_H() << ';' << IM2.get_H()
-                  << " | V: " << IM1.get_V() << ';' << IM2.get_V()
-                  << " | a: " << IM1.get_a() << ';' << IM2.get_a()
-                  << '\n';
+        std::cout << "t: " << IM1.get_t() << ';' << IM2.get_t();
+        std::cout << " | H: " << IM1.get_H() << ';' << IM2.get_H();
+        std::cout << " | V: " << IM1.get_V() << ';' << IM2.get_V();
+        std::cout << " | a: " << IM1.get_a() << ';' << IM2.get_a() << std::endl;
 
+        // Шаг для моделирования методом РК4
         if (rk4_active) {
             IM1.RK4();
 
@@ -102,6 +90,7 @@ int main() {
             }
         }
 
+        // Шаг для моделирования методом Эйлера
         if (euler_active) {
             IM2.euler_step();
 
@@ -111,7 +100,6 @@ int main() {
         }
 
         ++step;
-
     }
 
     if (rk4_active || euler_active) {
@@ -124,7 +112,6 @@ int main() {
     // РЕЗУЛЬТАТЫ
     //===================================================================
     std::cout << "========== INPUT DATA ==========" << std::endl;
-
     std::cout << "H_0: " << myH_0 << " m\n";
     std::cout << "V_0: " << myV_0 << " m/s\n";
     std::cout << "m: " << my_m << " kg\n";
@@ -133,39 +120,28 @@ int main() {
     std::cout << "dt: " << my_dt << " s\n";
     std::cout << "t_on: " << t_on << " s\n";
 
-
-    std::cout << "========= OUTPUT  DATA =========" << std::endl;
-
-
-    std::cout << "---------- RK4 RESULTS ----------" << std::endl;
-
+    std::cout << "========== RK4 RESULTS ==========" << std::endl;
     const long double H_exact_RK4 = IM1.get_H_exact(IM1.get_t());
-    const long double abs_error_RK4 =
-        std::abs(IM1.get_H() - H_exact_RK4);
-
+    const long double abs_error_RK4 = std::abs(IM1.get_H() - H_exact_RK4);
     std::cout << "Time: " << IM1.get_t() << " s\n";
-    std::cout << "Height: " << IM1.get_H() << " m\n";
-    std::cout << "Absolute height difference: "
-              << std::scientific << abs_error_RK4 << " m\n";
+    std::cout << "Height: " << IM1.get_H() << " m (error:";
+    std::cout << std::scientific << abs_error_RK4 << " m)\n";
+    std::cout << std::fixed << std::setprecision(3);
     std::cout << "Final velocity: " << IM1.get_V() << " m/s\n";
 
-
-
-
-    std::cout << "---------- EULER RESULTS ----------" << std::endl;
-
+    std::cout << "========== EULER RESULTS ==========" << std::endl;
     const long double H_exact_Euler = IM2.get_H_exact(IM2.get_t());
-    const long double abs_error_Euler =
-        std::abs(IM2.get_H() - H_exact_Euler);
-
+    const long double abs_error_Euler = std::abs(IM2.get_H() - H_exact_Euler);
     std::cout << "Time: " << IM2.get_t() << " s\n";
-    std::cout << "Height: " << IM2.get_H() << " m\n";
-    std::cout << "Absolute height difference: "
-              << std::scientific << abs_error_Euler << " m\n";
+    std::cout << "Height: " << IM2.get_H() << " m (error: ";
+    std::cout << std::scientific << abs_error_Euler << " m)\n";
+    std::cout << std::fixed << std::setprecision(3);
     std::cout << "Final velocity: " << IM2.get_V() << " m/s\n";
     //===================================================================
-
-
+    // Под error в выводе подразумевается абсолютная разница между численным и аналитическим решением.
+    // std::fixed и std::setprecision(3) используем для вывода чисел с тремя знаками после запятой.
+    // std::scientific используем для вывода очень малых значений.
+    // После std::scientific возвращаем std::fixed << std::setprecision(3)
 
     return 0;
 }

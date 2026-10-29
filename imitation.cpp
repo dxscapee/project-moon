@@ -23,35 +23,51 @@ void imitation::euler_step()
         step_dt = t_on - t_curr;
     }
 
+    if (step_dt <= 0.0L) {
+        return;
+    }
+
     const long double a = (t_curr >= t_on) ? (P_max / m - g) : -g;
 
     const long double H_start = H_curr;
     const long double V_start = V_curr;
 
     const long double H_next = H_start + V_start * step_dt;
-
     const long double V_next = V_start + a * step_dt;
 
-    // Проверяем пересечение поверхности внутри шага.
-    if (H_next <= 0.0L && V_start < 0.0L) {
-        const long double tau = -H_start / V_start;
+    // Определяем время остановки при движении вниз.
+    long double tau_stop = -1.0L;
 
-        t_curr += tau;
-        H_curr = 0.0L;
-        V_curr = V_start + a * tau;
-        finished = true;
-        return;
+    if (V_start < 0.0L && V_next >= 0.0L && a > 0.0L) {
+        tau_stop = -V_start / a;
     }
 
-    // Проверяем остановку аппарата во время движения вниз.
-    if (V_start < 0.0L && V_next >= 0.0L && a > 0.0L) {
-        const long double tau = -V_start / a;
+    // Определяем время касания поверхности.
+    long double tau_contact = -1.0L;
 
-        const long double H_stop = H_start + V_start * tau;
+    if (H_next <= 0.0L && V_start < 0.0L) {
+        tau_contact = -H_start / V_start;
+    }
 
-        t_curr += tau;
-        V_curr = 0.0L;
+    // Обрабатываем событие, которое произошло первым.
+
+    // Обрабатываем посадку, если она произошла первой.
+    if (tau_contact >= 0.0L &&
+        (tau_stop < 0.0L || tau_contact <= tau_stop)) {
+        t_curr += tau_contact;
+        H_curr = 0.0L;
+        V_curr = V_start + a * tau_contact;
+        finished = true;
+        return;
+        }
+    // Обрабатываем остановку, если она произошла первой.
+    if (tau_stop >= 0.0L && tau_stop <= step_dt) {
+        const long double H_stop =
+            H_start + V_start * tau_stop;
+
+        t_curr += tau_stop;
         H_curr = (H_stop > 0.0L) ? H_stop : 0.0L;
+        V_curr = 0.0L;
         finished = true;
         return;
     }
@@ -61,6 +77,8 @@ void imitation::euler_step()
     t_curr += step_dt;
 }
 
+
+// Для моделирования (учитываем события внутри метода)
 void imitation::RK4()
 {
     if (finished) {
@@ -88,10 +106,10 @@ void imitation::RK4()
     // Ускорение на текущем участке движения.
     const long double a = (t_curr >= t_on) ? (P_max / m - g) : -g;
 
-
     const long double H_start = H_curr;
     const long double V_start = V_curr;
 
+    // Один шаг метода Рунге — Кутты 4-го порядка.
     const long double k1 = V_start * step_dt;
     const long double m1 = a * step_dt;
 
@@ -108,46 +126,89 @@ void imitation::RK4()
     const long double m4 = a * step_dt;
 
     const long double H_next = H_start + (k1 + 2.0L * k2 + 2.0L * k3 + k4) / 6.0L;
-
     const long double V_next = V_start + (m1 + 2.0L * m2 + 2.0L * m3 + m4) / 6.0L;
+    const long double epsilon = 1e-12L; // очень малое число
 
-    // Проверяем остановку во время движения вниз.
+    // Определяем время остановки при движении вниз.
+    long double tau_stop = -1.0L;
+
     if (V_start < 0.0L && V_next >= 0.0L && a > 0.0L) {
-        const long double tau = -V_start / a;
-
-        const long double H_stop = H_start + V_start * tau + 0.5L * a * tau * tau;
-
-        t_curr += tau;
-        V_curr = 0.0L;
-        H_curr = (H_stop > 0.0L) ? H_stop : 0.0L;
-        finished = true;
-        return;
+        tau_stop = -V_start / a;
     }
 
-    // Проверяем пересечение поверхности внутри шага.
-    if (H_next <= 0.0L && V_start < 0.0L) {
-        const long double tau = -H_start / V_start;
+    // Ищем время пересечения поверхности внутри шага.
+    long double tau_contact = -1.0L;
 
-        t_curr += tau;
+    if (H_start > 0.0L) {
+        if (std::abs(a) < epsilon) {
+            if (V_start < 0.0L) {
+                const long double tau = -H_start / V_start;
+
+                if (tau >= 0.0L && tau <= step_dt) {
+                    tau_contact = tau;
+                }
+            }
+        } else {
+            const long double D =
+                V_start * V_start - 2.0L * a * H_start;
+
+            if (D >= 0.0L) {
+                const long double sqrt_D = std::sqrt(D);
+
+                const long double tau1 =
+                    (-V_start - sqrt_D) / a;
+
+                const long double tau2 =
+                    (-V_start + sqrt_D) / a;
+
+                if (tau1 >= 0.0L && tau1 <= step_dt) {
+                    tau_contact = tau1;
+                }
+
+                if (tau2 >= 0.0L && tau2 <= step_dt &&
+                    (tau_contact < 0.0L || tau2 < tau_contact)) {
+                    tau_contact = tau2;
+                }
+            }
+        }
+    }
+
+    // Обрабатываем событие, которое произошло первым.
+
+    // Обрабатываем посадку, если она произошла первой.
+    if (tau_contact >= 0.0L && (tau_stop < 0.0L || tau_contact <= tau_stop)) {
+        t_curr += tau_contact;
         H_curr = 0.0L;
-        V_curr = V_start + a * tau;
+        V_curr = V_start + a * tau_contact;
         finished = true;
         return;
     }
 
+    // Обрабатываем остановку, если она произошла первой.
+    if (tau_stop >= 0.0L && tau_stop <= step_dt) {
+        const long double H_stop = H_start + V_start * tau_stop + 0.5L * a * tau_stop * tau_stop;
+
+        t_curr += tau_stop;
+        H_curr = (H_stop > 0.0L) ? H_stop : 0.0L;
+        V_curr = 0.0L;
+        finished = true;
+        return;
+    }
+
+    // Если событий не было, завершаем обычный шаг.
     H_curr = H_next;
     V_curr = V_next;
     t_curr += step_dt;
 }
 
+// Для симуляции (не учитываем события внутри метода)
 void imitation::RK4(const long double step_dt)
 {
     if (finished || step_dt <= 0.0L) {
         return;
     }
 
-    const long double a =
-        (t_curr >= t_on) ? (P_max / m - g) : -g;
+    const long double a = (t_curr >= t_on) ? (P_max / m - g) : -g;
 
     const long double H_start = H_curr;
     const long double V_start = V_curr;
@@ -155,24 +216,17 @@ void imitation::RK4(const long double step_dt)
     const long double k1 = V_start * step_dt;
     const long double m1 = a * step_dt;
 
-    const long double k2 =
-        (V_start + m1 / 2.0L) * step_dt;
+    const long double k2 = (V_start + m1 / 2.0L) * step_dt;
     const long double m2 = a * step_dt;
 
-    const long double k3 =
-        (V_start + m2 / 2.0L) * step_dt;
+    const long double k3 = (V_start + m2 / 2.0L) * step_dt;
     const long double m3 = a * step_dt;
 
-    const long double k4 =
-        (V_start + m3) * step_dt;
+    const long double k4 = (V_start + m3) * step_dt;
     const long double m4 = a * step_dt;
 
-    H_curr = H_start +
-        (k1 + 2.0L * k2 + 2.0L * k3 + k4) / 6.0L;
-
-    V_curr = V_start +
-        (m1 + 2.0L * m2 + 2.0L * m3 + m4) / 6.0L;
-
+    H_curr = H_start + (k1 + 2.0L * k2 + 2.0L * k3 + k4) / 6.0L;
+    V_curr = V_start + (m1 + 2.0L * m2 + 2.0L * m3 + m4) / 6.0L;
     t_curr += step_dt;
 }
 
@@ -199,6 +253,7 @@ long double imitation::get_a() const {
     return (t_curr >= t_on) ? (P_max/m - g) : -g;
 }
 
+//Аналитическое решение
 long double imitation::get_H_exact(const long double t) const{
 
     if (t <= t_on) {
@@ -243,7 +298,7 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
     }
 
     const long double velocity_tolerance = 1e-3L;
-    const long double epsilon = 1e-12L;
+    const long double epsilon = 1e-12L; //очень малое число
 
     for (std::size_t i = 0; i < max_steps; ++i) {
         const long double H_start = H_curr;
@@ -266,7 +321,7 @@ SimulationResult imitation::simulate_rk4(const std::size_t max_steps)
         const long double a =
             (t_curr >= t_on) ? (P_max / m - g) : -g;
 
-        // Выполняем один шаг методом Рунге — Кутты 4-го порядка.
+        // Выполняем один шаг методом Рунге-Кутты 4-го порядка.
         RK4(step_dt);
 
         const long double H_next = H_curr;
